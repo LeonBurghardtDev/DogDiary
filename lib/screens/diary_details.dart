@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../services/data_service.dart';
 import '../models/diary.dart';
@@ -10,7 +11,6 @@ class DiaryDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Argumente aus der Route abrufen
     final String diaryId = ModalRoute.of(context)!.settings.arguments as String;
 
     final dataService = context.watch<DataService>();
@@ -33,7 +33,7 @@ class DiaryDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildImageUploader(context, diary),
+            _buildImageUploader(context, diary, dataService),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -64,7 +64,7 @@ class DiaryDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildImageUploader(BuildContext context, Diary diary) {
+  Widget _buildImageUploader(BuildContext context, Diary diary, DataService dataService) {
     return Center(
       child: Column(
         children: [
@@ -83,11 +83,16 @@ class DiaryDetailsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
-            onPressed: () {
-              // Bild hochladen (später zu implementieren)
+            onPressed: () async {
+              final picker = ImagePicker();
+              final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+              if (pickedFile != null) {
+                final updatedDiary = diary.copyWith(imagePath: pickedFile.path);
+                dataService.updateDiary(updatedDiary);
+              }
             },
             icon: const Icon(Icons.upload),
-            label: const Text('Bild hochladen'),
+            label: const Text('Bild ändern'),
           ),
         ],
       ),
@@ -115,7 +120,7 @@ class DiaryDetailsScreen extends StatelessWidget {
             Navigator.pushNamed(
               ctx,
               '/entry-details',
-              arguments: entry.id, // Weiterleitung mit Argument
+              arguments: entry.id,
             );
           },
         );
@@ -160,7 +165,8 @@ class DiaryDetailsScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Tagebuch aktualisieren (später zu implementieren)
+                final updatedDiary = diary.copyWith(title: titleController.text);
+                context.read<DataService>().updateDiary(updatedDiary);
                 Navigator.of(ctx).pop();
               },
               child: const Text('Speichern'),

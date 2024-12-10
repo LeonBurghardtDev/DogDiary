@@ -30,6 +30,15 @@ class DataService with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateDiary(Diary updatedDiary) async {
+    final index = _diaries.indexWhere((diary) => diary.id == updatedDiary.id);
+    if (index != -1) {
+      _diaries[index] = updatedDiary;
+      await _saveData();
+      notifyListeners();
+    }
+  }
+
   /// Deletes a dog and all associated diaries, then persists the data.
   void deleteDog(String dogId) async {
     _dogs.removeWhere((dog) => dog.id == dogId);
