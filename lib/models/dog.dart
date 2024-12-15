@@ -3,7 +3,7 @@ class Dog {
   final String id;
   final String name;
   final String breed;
-  final DateTime birthDate;
+  final String birthDate;
 
   Dog({
     required this.id,
@@ -18,7 +18,7 @@ class Dog {
       'id': id,
       'name': name,
       'breed': breed,
-      'birthDate': birthDate.toIso8601String(),
+      'birthDate': birthDate,
     };
   }
 
@@ -28,7 +28,7 @@ class Dog {
       id: json['id'],
       name: json['name'],
       breed: json['breed'],
-      birthDate: DateTime.parse(json['birthDate']),
+      birthDate: json['birthDate'],
     );
   }
 }

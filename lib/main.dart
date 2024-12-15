@@ -24,6 +24,7 @@ class DogDiaryApp extends StatelessWidget {
         theme: ThemeData(primarySwatch: Colors.blue),
         initialRoute: '/',
         routes: routes,
+
       ),
     );
   }

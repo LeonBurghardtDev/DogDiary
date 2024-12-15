@@ -1,51 +1,75 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/dog.dart';
 import '../services/data_service.dart';
+import '../widgets/bottom_nav_bar.dart';
 
 class DiariesOverviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Abrufen der Tagebücher aus dem DataService
+    // Retrieve diaries from the DataService
     final dataService = context.watch<DataService>();
     final diaries = dataService.diaries;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tagebuch Übersicht'),
+        title: const Text(
+          'DogDiary',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: diaries.isEmpty
           ? const Center(
-        child: Text('Noch keine Tagebücher vorhanden.'),
+        child: Text(
+          'Noch keine Tagebücher vorhanden.',
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
       )
-          : ListView.builder(
-        itemCount: diaries.length,
-        itemBuilder: (ctx, index) {
-          final diary = diaries[index];
-          return ListTile(
-            title: Text(diary.title),
-            subtitle: Text(
-              'Gebunden an: ${_getDogName(dataService, diary.dogId)}\n'
-                  'Erstellt am: ${diary.createdAt.toLocal().toString().split(' ')[0]}',
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                _deleteDiary(context, diary.id);
-              },
-            ),
-            onTap: () {
-              // Navigation zu den Einträgen des Tagebuchs
-              Navigator.pushNamed(
-                context,
-                '/entry-details',
-                arguments: diary.id,
-              );
-            },
-          );
-        },
+          : Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: ListView.builder(
+          itemCount: diaries.length,
+          itemBuilder: (ctx, index) {
+            final diary = diaries[index];
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              elevation: 2,
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(16.0),
+                title: Text(
+                  diary.title,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  'Gebunden an: ${_getDogName(dataService, diary.dogId)}\n'
+                      'Erstellt am: ${diary.createdAt.toLocal().toString().split(' ')[0]}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    _deleteDiary(context, diary.id);
+                  },
+                ),
+                onTap: () {
+                  // Navigate to diary details
+                  Navigator.pushNamed(
+                    context,
+                    '/entry-details',
+                    arguments: diary.id,
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -54,39 +78,53 @@ class DiariesOverviewScreen extends StatelessWidget {
             '/create-diary',
           );
         },
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
+      bottomNavigationBar: BottomNavBar(currentIndex: 0),
     );
   }
 
-  /// Helferfunktion: Gibt den Namen des Hundes zurück, zu dem das Tagebuch gehört
+  /// Helper function: Get the name of the dog linked to the diary
   String _getDogName(DataService dataService, String dogId) {
     final dog = dataService.dogs.firstWhere(
           (dog) => dog.id == dogId,
     );
-    return dog?.name ?? 'Unbekannter Hund';
+    return dog.name;
   }
 
-  /// Helferfunktion: Löscht ein Tagebuch mit Bestätigungsdialog
+  /// Helper function: Delete a diary with a confirmation dialog
   void _deleteDiary(BuildContext context, String diaryId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Tagebuch löschen'),
-        content: const Text('Möchten Sie dieses Tagebuch wirklich löschen?'),
+        title: const Text(
+          'Tagebuch löschen',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Möchten Sie dieses Tagebuch wirklich löschen?',
+          style: TextStyle(color: Colors.grey),
+        ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(ctx).pop(); // Dialog schließen
+              Navigator.of(ctx).pop(); // Close dialog
             },
-            child: const Text('Abbrechen'),
+            child: const Text(
+              'Abbrechen',
+              style: TextStyle(color: Colors.black),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
             onPressed: () {
               context.read<DataService>().deleteDiary(diaryId);
-              Navigator.of(ctx).pop(); // Dialog schließen
+              Navigator.of(ctx).pop(); // Close dialog
             },
-            child: const Text('Löschen'),
+            child: const Text('Löschen', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

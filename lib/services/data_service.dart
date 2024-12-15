@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert'; // Für JSON-Konvertierung
+import '../models/diary_entry.dart';
 import '../models/dog.dart';
 import '../models/diary.dart';
 
@@ -8,6 +9,7 @@ import '../models/diary.dart';
 class DataService with ChangeNotifier {
   final List<Dog> _dogs = [];
   final List<Diary> _diaries = [];
+  final List<DiaryEntry> _entries = [];
 
   List<Dog> get dogs => [..._dogs];
   List<Diary> get diaries => [..._diaries];
@@ -63,22 +65,62 @@ class DataService with ChangeNotifier {
     await prefs.setString('diaries', diariesJson);
   }
 
-  /// Loads dogs and diaries from local storage.
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
-    final dogsJson = prefs.getString('dogs');
-    final diariesJson = prefs.getString('diaries');
 
+    // Load dogs
+    final dogsJson = prefs.getString('dogs');
     if (dogsJson != null) {
       final List<dynamic> dogsList = jsonDecode(dogsJson);
       _dogs.clear();
       _dogs.addAll(dogsList.map((json) => Dog.fromJson(json)).toList());
     }
 
+    // Load diaries
+    final diariesJson = prefs.getString('diaries');
     if (diariesJson != null) {
       final List<dynamic> diariesList = jsonDecode(diariesJson);
       _diaries.clear();
       _diaries.addAll(diariesList.map((json) => Diary.fromJson(json)).toList());
+    }
+
+    // Load entries
+    final entriesJson = prefs.getString('entries');
+    if (entriesJson != null) {
+      final List<dynamic> entriesList = jsonDecode(entriesJson);
+      _entries.clear();
+      _entries.addAll(entriesList.map((json) => DiaryEntry.fromJson(json)).toList());
+    }
+
+    // Notify listeners after loading all data
+    notifyListeners();
+  }
+
+
+  List<DiaryEntry> getEntries(String diaryId) {
+    return _entries.where((entry) => entry.diaryId == diaryId).toList();
+  }
+
+  void addEntry(DiaryEntry entry) async {
+    _entries.add(entry);
+    await _saveEntries();
+    notifyListeners();
+  }
+
+  Future<void> _saveEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final entriesJson = jsonEncode(_entries.map((entry) => entry.toJson()).toList());
+    await prefs.setString('entries', entriesJson);
+  }
+
+  Future<void> loadEntries() async {
+    final prefs = await SharedPreferences.getInstance();
+    final entriesJson = prefs.getString('entries');
+
+    if (entriesJson != null) {
+      final List<dynamic> entriesList = jsonDecode(entriesJson);
+      _entries.clear();
+      _entries.addAll(entriesList.map((json) => DiaryEntry.fromJson(json)).toList());
     }
 
     notifyListeners();
