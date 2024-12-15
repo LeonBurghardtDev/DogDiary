@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
-import '../services/data_service.dart';
+import '../generated/l10n.dart';
 import '../models/diary_entry.dart';
+import '../services/data_service.dart';
+import '../utils/dialog_utils.dart';
+import '../utils/text_styles.dart';
+import '../utils/dialog_utils.dart';
 
 class CreateEntryScreen extends StatefulWidget {
   @override
@@ -18,7 +22,7 @@ class _CreateEntryScreenState extends State<CreateEntryScreen> {
   File? _selectedImage;
   String? _selectedMood;
 
-  final List<String> moods = ['Glücklich', 'Traurig', 'Aufgeregt', 'Ruhig'];
+  final List<String> moods = ['happy', 'sad', 'excited', 'calm'];
 
   @override
   void dispose() {
@@ -32,110 +36,74 @@ class _CreateEntryScreenState extends State<CreateEntryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Neuen Eintrag erstellen'),
+        title: Text(S.of(context).newEntryTitle, style: TextStyles.appBarTitle),
         backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildImagePicker(context),
-
-                const SizedBox(height: 20),
-                const SizedBox(height: 20),
-                Text(
-                  'Beschreibung des Tages',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.black),
-                ),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: 'Erzähle von dem Tag',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    filled: true,
-                    fillColor: Colors.teal.withOpacity(0.05),
-                  ),
-                  maxLines: 4,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Die Beschreibung darf nicht leer sein.';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 20),
-                Text(
-                  'Stimmung des Hundes',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.black),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _selectedMood,
-                  items: moods
-                      .map((mood) => DropdownMenuItem(
-                    value: mood,
-                    child: Text(mood),
-                  ))
-                      .toList(),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    filled: true,
-                    fillColor: Colors.teal.withOpacity(0.05),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedMood = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Bitte eine Stimmung auswählen.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 30),
-                Center(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() && _selectedImage != null) {
-                        _saveEntry(context, diaryId);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Bitte alle Felder ausfüllen und ein Bild hochladen.'),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.save),
-                    label: const Text(
-                      'Speichern',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+        padding: const EdgeInsets.all(20.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildImagePicker(context),
+              const SizedBox(height: 20),
+              _buildSectionTitle(S.of(context).descriptionTitle),
+              _buildDescriptionField(),
+              const SizedBox(height: 20),
+              _buildSectionTitle(S.of(context).moodTitle),
+              _buildMoodDropdown(),
+              const SizedBox(height: 30),
+              _buildSaveButton(context, diaryId),
+            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(title, style: TextStyles.cardTitle);
+  }
+
+  Widget _buildDescriptionField() {
+    return TextFormField(
+      controller: _descriptionController,
+      decoration: InputDecoration(
+        labelText: S.of(context).descriptionHint,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
+        filled: true,
+        fillColor: Colors.grey.shade100,
+      ),
+      maxLines: 4,
+      validator: (value) =>
+      value == null || value.isEmpty ? S.of(context).descriptionError : null,
+    );
+  }
+
+  Widget _buildMoodDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedMood,
+      items: moods.map((mood) {
+        return DropdownMenuItem<String>(
+          value: mood,
+          child: Text(
+            mood, // Display the actual mood string here
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        );
+      })
+          .toList(),
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
+        filled: true,
+        fillColor: Colors.grey.shade100,
+      ),
+      onChanged: (value) => setState(() => _selectedMood = value),
+      validator: (value) =>
+      value == null ? S.of(context).moodError : null,
     );
   }
 
@@ -143,58 +111,63 @@ class _CreateEntryScreenState extends State<CreateEntryScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Bild des Tages',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.black),
-        ),
+        _buildSectionTitle(S.of(context).imageTitle),
         const SizedBox(height: 8),
         Center(
           child: _selectedImage != null
               ? ClipRRect(
             borderRadius: BorderRadius.circular(12.0),
-            child: Image.file(
-              _selectedImage!,
-              height: 200,
-              width: 200,
-              fit: BoxFit.cover,
-            ),
+            child: Image.file(_selectedImage!,
+                height: 200, width: 200, fit: BoxFit.cover),
           )
               : Container(
             height: 200,
             width: 200,
             decoration: BoxDecoration(
-              color: Colors.teal.withOpacity(0.1),
+              color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(12.0),
             ),
-            child: const Icon(
-              Icons.image,
-              size: 60,
-            ),
+            child: const Icon(Icons.image, size: 60),
           ),
         ),
         const SizedBox(height: 10),
         Center(
           child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-            ),
-            onPressed: () async {
-              final picker = ImagePicker();
-              final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-              if (pickedFile != null) {
-                setState(() {
-                  _selectedImage = File(pickedFile.path);
-                });
-              }
-            },
+            onPressed: _pickImage,
             icon: const Icon(Icons.upload),
-            label: const Text('Bild auswählen'),
+            label: Text(S.of(context).selectImage),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildSaveButton(BuildContext context, String diaryId) {
+    return Center(
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+        ),
+        onPressed: () {
+          if (_formKey.currentState!.validate() && _selectedImage != null) {
+            _saveEntry(context, diaryId);
+          } else {
+            DialogUtils.showSnackbar(context, S.of(context).fillAllFields);
+          }
+        },
+        icon: const Icon(Icons.save),
+        label: Text(S.of(context).save),
+      ),
+    );
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() => _selectedImage = File(pickedFile.path));
+    }
   }
 
   void _saveEntry(BuildContext context, String diaryId) {

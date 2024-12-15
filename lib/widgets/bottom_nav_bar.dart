@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../constants/routes_constants.dart';
+import '../generated/l10n.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -12,40 +14,42 @@ class BottomNavBar extends StatelessWidget {
       selectedItemColor: Colors.purple,
       unselectedItemColor: Colors.grey,
       showUnselectedLabels: false,
-      onTap: (index) {
-        switch (index) {
-          case 0:
-            Navigator.pushReplacementNamed(context, '/');
-            break;
-          case 1:
-            Navigator.pushReplacementNamed(context, '/blog');
-            break;
-          case 2:
-            Navigator.pushReplacementNamed(context, '/chats');
-            break;
-          case 3:
-            Navigator.pushReplacementNamed(context, '/profile');
-            break;
-        }
-      },
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.book),
-          label: 'Tagebücher',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.article),
-          label: 'Blog',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.chat),
-          label: 'Chats',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profil',
-        ),
-      ],
+      onTap: (index) => _onItemTapped(context, index),
+      items: _buildNavigationItems(context),
     );
+  }
+
+  void _onItemTapped(BuildContext context, int index) {
+    final routes = [
+      RouteConstants.diariesOverview,
+      RouteConstants.blog,
+      RouteConstants.chats,
+      RouteConstants.profile,
+    ];
+
+    if (index != currentIndex) {
+      Navigator.pushReplacementNamed(context, routes[index]);
+    }
+  }
+
+  List<BottomNavigationBarItem> _buildNavigationItems(BuildContext context) {
+    return [
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.book),
+        label: S.of(context).navDiaries,
+      ),
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.article),
+        label: S.of(context).navBlog,
+      ),
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.chat),
+        label: S.of(context).navChats,
+      ),
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.person),
+        label: S.of(context).navProfile,
+      ),
+    ];
   }
 }

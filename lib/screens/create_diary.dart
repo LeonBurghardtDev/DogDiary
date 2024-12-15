@@ -7,8 +7,12 @@ import 'package:uuid/uuid.dart';
 import '../models/diary.dart';
 import '../models/dog.dart';
 import '../services/data_service.dart';
+import '../generated/l10n.dart'; // Localization
+import '../utils/text_styles.dart';
 
 class CreateDiaryScreen extends StatefulWidget {
+  const CreateDiaryScreen({Key? key}) : super(key: key);
+
   @override
   _CreateDiaryScreenState createState() => _CreateDiaryScreenState();
 }
@@ -19,7 +23,6 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
   final _dogBreedController = TextEditingController();
   final _dogBirthDateController = TextEditingController();
   final _diaryTitleController = TextEditingController();
-
   File? _selectedImage;
 
   @override
@@ -34,12 +37,7 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Neues Tagebuch erstellen'),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
-        elevation: 0,
-      ),
+      appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -48,97 +46,39 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildImagePicker(),
-
+                _buildImagePicker(context),
                 const SizedBox(height: 20),
-                Text(
-                  'Tagebuch Titel',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(color: Colors.black),
-                ),
+                _buildSectionTitle(context, S.of(context).diaryTitle),
                 const SizedBox(height: 8),
                 _buildTextField(
                   controller: _diaryTitleController,
-                  label: 'Titel des Tagebuchs',
-                  hint: 'Gib den Titel des Tagebuchs ein',
+                  label: S.of(context).diaryTitleLabel,
+                  hint: S.of(context).diaryTitleHint,
                 ),
-
                 const SizedBox(height: 20),
-                Text(
-                  'Hundedaten',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(color: Colors.black),
-                ),
+                _buildSectionTitle(context, S.of(context).dogDetails),
                 const SizedBox(height: 8),
                 _buildTextField(
                   controller: _dogNameController,
-                  label: 'Name des Hundes',
-                  hint: 'Gib den Namen ein',
+                  label: S.of(context).dogNameLabel,
+                  hint: S.of(context).dogNameHint,
                 ),
                 const SizedBox(height: 12),
                 _buildTextField(
                   controller: _dogBreedController,
-                  label: 'Rasse des Hundes',
-                  hint: 'Gib die Rasse ein',
+                  label: S.of(context).dogBreedLabel,
+                  hint: S.of(context).dogBreedHint,
                 ),
                 const SizedBox(height: 12),
                 _buildTextField(
                   controller: _dogBirthDateController,
-                  label: 'Geburtsdatum des Hundes',
-                  hint: 'Gib das Geburtsdatum ein (dd.MM.yyyy)',
+                  label: S.of(context).dogBirthDateLabel,
+                  hint: S.of(context).dogBirthDateHint,
                   keyboardType: TextInputType.datetime,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Das Geburtsdatum darf nicht leer sein.';
-                    }
-                    // Parse the input as a German-style date
-                    try {
-                      final date = DateFormat('dd.MM.yyyy').parse(value);
-                      if (date.isAfter(DateTime.now())) {
-                        return 'Das Datum darf nicht in der Zukunft liegen.';
-                      }
-                    } catch (e) {
-                      return 'Ungültiges Format. Verwende dd.MM.yyyy.';
-                    }
-                    return null;
-                  },
+                  validator: _validateDate,
                 ),
-
-
                 const SizedBox(height: 30),
-                Center(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20.0),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (_formKey.currentState!.validate() &&
-                          _selectedImage != null) {
-                        _saveDogAndDiary(context);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Bitte alle Felder ausfüllen und ein Bild hochladen.'),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.save),
-                    label: const Text(
-                      'Speichern',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
-                ),
+                _buildSaveButton(context),
               ],
             ),
           ),
@@ -147,18 +87,27 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
     );
   }
 
-  /// Image Picker for Diary Cover
-  Widget _buildImagePicker() {
+  AppBar _buildAppBar(BuildContext context) {
+    return AppBar(
+      title: Text(S.of(context).createDiaryTitle),
+      backgroundColor: Colors.white,
+      iconTheme: const IconThemeData(color: Colors.black),
+      elevation: 0,
+    );
+  }
+
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.black),
+    );
+  }
+
+  Widget _buildImagePicker(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Titelbild des Tagebuchs',
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(color: Colors.black),
-        ),
+        _buildSectionTitle(context, S.of(context).diaryCover),
         const SizedBox(height: 8),
         Center(
           child: _selectedImage != null
@@ -179,33 +128,16 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
               borderRadius: BorderRadius.circular(12.0),
             ),
             child: const Center(
-              child: Icon(
-                Icons.image,
-                size: 60,
-              ),
+              child: Icon(Icons.image, size: 60),
             ),
           ),
         ),
         const SizedBox(height: 10),
         Center(
           child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-            ),
-            onPressed: () async {
-              final picker = ImagePicker();
-              final pickedFile =
-              await picker.pickImage(source: ImageSource.gallery);
-              if (pickedFile != null) {
-                setState(() {
-                  _selectedImage = File(pickedFile.path);
-                });
-              }
-            },
+            onPressed: _pickImage,
             icon: const Icon(Icons.upload),
-            label: const Text('Bild auswählen'),
+            label: Text(S.of(context).chooseImage),
           ),
         ),
       ],
@@ -223,37 +155,56 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
         filled: true,
         fillColor: Colors.teal.withOpacity(0.05),
         hintText: hint,
       ),
       keyboardType: keyboardType,
-      validator: validator ??
-              (value) {
-            if (value == null || value.isEmpty) {
-              return '$label darf nicht leer sein.';
-            }
-            return null;
-          },
+      validator: validator ?? (value) => value?.isEmpty ?? true ? label : null,
     );
   }
 
-  void _saveDogAndDiary(BuildContext context) {
+  Widget _buildSaveButton(BuildContext context) {
+    return Center(
+      child: ElevatedButton.icon(
+        onPressed: _saveDogAndDiary,
+        icon: const Icon(Icons.save),
+        label: Text(S.of(context).saveButton),
+      ),
+    );
+  }
+
+  String? _validateDate(String? value) {
+    if (value == null || value.isEmpty) {
+      return S.of(context).birthDateEmptyError;
+    }
     try {
-      // Datum im deutschen Format einlesen
-      final String birthDateString = _dogBirthDateController.text;
+      final date = DateFormat('dd.MM.yyyy').parse(value);
+      if (date.isAfter(DateTime.now())) {
+        return S.of(context).birthDateFutureError;
+      }
+    } catch (_) {
+      return S.of(context).birthDateFormatError;
+    }
+    return null;
+  }
 
-      // Sicherstellen, dass das Format korrekt ist
-      final DateTime birthDate = DateFormat('dd.MM.yyyy').parse(birthDateString);
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() => _selectedImage = File(pickedFile.path));
+    }
+  }
 
+  void _saveDogAndDiary() {
+    if (_formKey.currentState?.validate() == true && _selectedImage != null) {
       final dog = Dog(
         id: const Uuid().v4(),
         name: _dogNameController.text,
         breed: _dogBreedController.text,
-        birthDate: birthDateString, // Im deutschen Format speichern
+        birthDate: _dogBirthDateController.text,
       );
 
       final diary = Diary(
@@ -269,12 +220,10 @@ class _CreateDiaryScreenState extends State<CreateDiaryScreen> {
       dataService.addDiary(diary);
 
       Navigator.pop(context);
-    } catch (e) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fehler beim Speichern. Überprüfe die Eingaben.')),
+        SnackBar(content: Text(S.of(context).missingFieldsError)),
       );
     }
   }
-
-
 }
